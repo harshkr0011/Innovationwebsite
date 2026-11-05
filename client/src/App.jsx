@@ -72,6 +72,7 @@ function App() {
           <Route path="/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -79,9 +80,53 @@ function App() {
   );
 }
 
+function NavDropdown({ label, items }) {
+  const location = useLocation();
+  const isActive = items.some((item) => location.pathname === item.to);
+
+  return (
+    <div className="nav-dropdown">
+      <button type="button" className={isActive ? 'nav-dropdown-trigger active' : 'nav-dropdown-trigger'}>
+        {label}
+        <span aria-hidden="true">▾</span>
+      </button>
+      <div className="nav-dropdown-menu">
+        {items.map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className={location.pathname === item.to ? 'active' : ''}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Layout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
+
+  const workspaceItems = [
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/projects', label: 'Projects' },
+    { to: '/ai', label: 'AI Studio' }
+  ];
+
+  const communityItems = [
+    { to: '/launch', label: 'Launch' },
+    { to: '/mentors', label: 'Mentors' },
+    { to: '/grants', label: 'Grants' }
+  ];
+
+  const accountItems = [
+    { to: '/profile', label: 'Profile' },
+    { to: '/settings', label: 'Settings' },
+    { to: '/team', label: 'Team' },
+    { to: '/messages', label: 'Messages' }
+  ];
 
   return (
     <div className="app-shell">
@@ -92,18 +137,13 @@ function Layout({ children }) {
 
         <nav className="nav">
           <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Home</Link>
-          <Link to="/launch" className={location.pathname === '/launch' ? 'active' : ''}>Launch</Link>
-          <Link to="/mentors" className={location.pathname === '/mentors' ? 'active' : ''}>Mentors</Link>
-          <Link to="/grants" className={location.pathname === '/grants' ? 'active' : ''}>Grants</Link>
-          {!user && <Link to="/auth" className={location.pathname === '/auth' ? 'active' : ''}>Login</Link>}
-          {user && (
+          {!user ? (
+            <Link to="/auth" className={location.pathname === '/auth' ? 'active' : ''}>Login</Link>
+          ) : (
             <>
-              <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>Dashboard</Link>
-              <Link to="/projects" className={location.pathname === '/projects' ? 'active' : ''}>Projects</Link>
-              <Link to="/ai" className={location.pathname === '/ai' ? 'active' : ''}>AI Studio</Link>
-              <Link to="/team" className={location.pathname === '/team' ? 'active' : ''}>Team</Link>
-              <Link to="/messages" className={location.pathname === '/messages' ? 'active' : ''}>Messages</Link>
-              <Link to="/profile" className={location.pathname === '/profile' ? 'active' : ''}>Profile</Link>
+              <NavDropdown label="Workspace" items={workspaceItems} />
+              <NavDropdown label="Community" items={communityItems} />
+              <NavDropdown label="Account" items={accountItems} />
             </>
           )}
         </nav>
@@ -1205,8 +1245,21 @@ function MessagesPage() {
   );
 }
 
-function ProfilePage() {
-  const [profile, setProfile] = useState({ bio: '', skills: '', location: '', role: '' });
+function SettingsPage() {
+  return <ProfilePage defaultTab="preferences" />;
+}
+
+function ProfilePage({ defaultTab = 'overview' }) {
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [profile, setProfile] = useState({ bio: '', skills: '', location: '', role: '', company: '', website: '' });
+  const [settings, setSettings] = useState({
+    notifications: true,
+    emails: true,
+    startupUpdates: true,
+    mentorMatchAlerts: true,
+    privacy: 'Public',
+    timeZone: 'UTC+05:30'
+  });
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -1217,7 +1270,9 @@ function ProfilePage() {
           bio: data.bio || '',
           skills: (data.skills || []).join(', '),
           location: data.location || '',
-          role: data.role || 'Student Innovator'
+          role: data.role || 'Student Innovator',
+          company: data.company || '',
+          website: data.website || ''
         });
       } catch (error) {
         console.error(error);
@@ -1243,30 +1298,152 @@ function ProfilePage() {
     }
   };
 
+  const saveSettings = async (e) => {
+    e.preventDefault();
+    setMessage('Settings saved successfully');
+  };
+
   return (
     <div className="content-stack">
-      <section className="panel">
-        <h2>Your profile</h2>
-        <form onSubmit={saveProfile} className="stack-form compact">
-          <label>
-            Role
-            <input value={profile.role} onChange={(e) => setProfile({ ...profile, role: e.target.value })} />
-          </label>
-          <label>
-            Location
-            <input value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} />
-          </label>
-          <label>
-            Skills
-            <input value={profile.skills} onChange={(e) => setProfile({ ...profile, skills: e.target.value })} />
-          </label>
-          <label>
-            Bio
-            <textarea value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} rows="4" />
-          </label>
+      <section className="panel profile-hero">
+        <div className="profile-intro">
+          <div className="avatar large">{(profile.role || 'S').split(' ').map((word) => word[0]).join('').slice(0, 2)}</div>
+          <div>
+            <span className="eyebrow small">Founder profile</span>
+            <h2>{profile.role || 'Student Innovator'}</h2>
+            <p>{profile.location || 'Location not set'} • {profile.company || 'Independent founder'}</p>
+          </div>
+        </div>
 
-          <button className="primary-button" type="submit">Save profile</button>
-        </form>
+        <div className="profile-badges">
+          <span>Active session</span>
+          <span>Startup ready</span>
+          <span>Mentor match on</span>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="profile-tabs">
+          <button type="button" className={activeTab === 'overview' ? 'segment active' : 'segment'} onClick={() => setActiveTab('overview')}>Overview</button>
+          <button type="button" className={activeTab === 'preferences' ? 'segment active' : 'segment'} onClick={() => setActiveTab('preferences')}>Preferences</button>
+          <button type="button" className={activeTab === 'security' ? 'segment active' : 'segment'} onClick={() => setActiveTab('security')}>Security</button>
+        </div>
+
+        {activeTab === 'overview' && (
+          <form onSubmit={saveProfile} className="stack-form compact">
+            <div className="inline-two">
+              <label>
+                Role
+                <input value={profile.role} onChange={(e) => setProfile({ ...profile, role: e.target.value })} />
+              </label>
+              <label>
+                Company
+                <input value={profile.company} onChange={(e) => setProfile({ ...profile, company: e.target.value })} />
+              </label>
+            </div>
+
+            <div className="inline-two">
+              <label>
+                Location
+                <input value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} />
+              </label>
+              <label>
+                Website
+                <input value={profile.website} onChange={(e) => setProfile({ ...profile, website: e.target.value })} />
+              </label>
+            </div>
+
+            <label>
+              Skills
+              <input value={profile.skills} onChange={(e) => setProfile({ ...profile, skills: e.target.value })} />
+            </label>
+
+            <label>
+              Bio
+              <textarea value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} rows="4" />
+            </label>
+
+            <button className="primary-button" type="submit">Save profile</button>
+          </form>
+        )}
+
+        {activeTab === 'preferences' && (
+          <form onSubmit={saveSettings} className="settings-grid">
+            <div className="space-card">
+              <h3>Notification settings</h3>
+              <label className="toggle-row">
+                <span>Product and platform updates</span>
+                <input type="checkbox" checked={settings.notifications} onChange={(e) => setSettings({ ...settings, notifications: e.target.checked })} />
+              </label>
+              <label className="toggle-row">
+                <span>Weekly email digest</span>
+                <input type="checkbox" checked={settings.emails} onChange={(e) => setSettings({ ...settings, emails: e.target.checked })} />
+              </label>
+              <label className="toggle-row">
+                <span>Startup momentum alerts</span>
+                <input type="checkbox" checked={settings.startupUpdates} onChange={(e) => setSettings({ ...settings, startupUpdates: e.target.checked })} />
+              </label>
+            </div>
+
+            <div className="space-card">
+              <h3>Session preferences</h3>
+              <label>
+                Visibility
+                <select value={settings.privacy} onChange={(e) => setSettings({ ...settings, privacy: e.target.value })}>
+                  <option>Public</option>
+                  <option>Private</option>
+                  <option>Team only</option>
+                </select>
+              </label>
+              <label>
+                Time zone
+                <select value={settings.timeZone} onChange={(e) => setSettings({ ...settings, timeZone: e.target.value })}>
+                  <option>UTC+05:30</option>
+                  <option>UTC</option>
+                  <option>UTC-05:00</option>
+                </select>
+              </label>
+              <div className="status-box">
+                <strong>Current session</strong>
+                <span>Online • Last active 2 minutes ago</span>
+              </div>
+            </div>
+
+            <div className="space-card full-width">
+              <h3>Mentor matching</h3>
+              <label className="toggle-row">
+                <span>Mentor match alerts</span>
+                <input type="checkbox" checked={settings.mentorMatchAlerts} onChange={(e) => setSettings({ ...settings, mentorMatchAlerts: e.target.checked })} />
+              </label>
+            </div>
+
+            <button className="primary-button" type="submit">Save settings</button>
+          </form>
+        )}
+
+        {activeTab === 'security' && (
+          <form onSubmit={saveSettings} className="stack-form compact">
+            <div className="inline-two">
+              <label>
+                Current password
+                <input type="password" placeholder="••••••••" />
+              </label>
+              <label>
+                New password
+                <input type="password" placeholder="••••••••" />
+              </label>
+            </div>
+            <label>
+              Two-factor authentication
+              <select>
+                <option>Enabled</option>
+                <option>Disabled</option>
+              </select>
+            </label>
+            <button className="primary-button" type="submit">Update security</button>
+          </form>
+        )}
+
         {message && <p className="inline-message">{message}</p>}
       </section>
     </div>
