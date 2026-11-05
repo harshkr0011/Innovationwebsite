@@ -66,8 +66,11 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
           <Route path="/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
-          <Route path="/launch" element={<ProtectedRoute><LaunchPage /></ProtectedRoute>} />
-          <Route path="/mentors" element={<ProtectedRoute><MentorsPage /></ProtectedRoute>} />
+          <Route path="/launch" element={<LaunchPage />} />
+          <Route path="/mentors" element={<MentorsPage />} />
+          <Route path="/grants" element={<GrantsPage />} />
+          <Route path="/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -89,14 +92,17 @@ function Layout({ children }) {
 
         <nav className="nav">
           <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Home</Link>
+          <Link to="/launch" className={location.pathname === '/launch' ? 'active' : ''}>Launch</Link>
+          <Link to="/mentors" className={location.pathname === '/mentors' ? 'active' : ''}>Mentors</Link>
+          <Link to="/grants" className={location.pathname === '/grants' ? 'active' : ''}>Grants</Link>
           {!user && <Link to="/auth" className={location.pathname === '/auth' ? 'active' : ''}>Login</Link>}
           {user && (
             <>
               <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>Dashboard</Link>
               <Link to="/projects" className={location.pathname === '/projects' ? 'active' : ''}>Projects</Link>
               <Link to="/ai" className={location.pathname === '/ai' ? 'active' : ''}>AI Studio</Link>
-              <Link to="/launch" className={location.pathname === '/launch' ? 'active' : ''}>Launch</Link>
-              <Link to="/mentors" className={location.pathname === '/mentors' ? 'active' : ''}>Mentors</Link>
+              <Link to="/team" className={location.pathname === '/team' ? 'active' : ''}>Team</Link>
+              <Link to="/messages" className={location.pathname === '/messages' ? 'active' : ''}>Messages</Link>
               <Link to="/profile" className={location.pathname === '/profile' ? 'active' : ''}>Profile</Link>
             </>
           )}
@@ -696,30 +702,77 @@ function AIPage() {
 }
 
 function LaunchPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [launches, setLaunches] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadLaunches() {
-      try {
-        const data = await apiRequest('/launch');
-        setLaunches(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+  const fallbackLaunches = [
+    {
+      _id: 'launch-demo-1',
+      title: 'FlowPilot AI',
+      tagline: 'AI ops assistant for early-stage startup teams.',
+      description: 'A founder workflow app that turns meeting notes into tasks, outreach, and launch status updates.',
+      tags: ['AI', 'SaaS', 'Productivity'],
+      launcher: { username: 'Aarav' },
+      upvotes: ['demo']
+    },
+    {
+      _id: 'launch-demo-2',
+      title: 'Planetly',
+      tagline: 'Climate reporting for SaaS companies.',
+      description: 'An analytics platform that helps teams measure and reduce their carbon footprint.',
+      tags: ['Climate', 'Analytics', 'B2B'],
+      launcher: { username: 'Nisha' },
+      upvotes: ['demo', 'demo-2']
     }
+  ];
 
+  async function loadLaunches() {
+    try {
+      const data = await apiRequest('/launch');
+      setLaunches(data.length ? data : fallbackLaunches);
+    } catch (error) {
+      console.error(error);
+      setLaunches(fallbackLaunches);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
     loadLaunches();
   }, []);
+
+  async function handleUpvote(launchId) {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      const upvoteCount = await apiRequest(`/launch/${launchId}/upvote`, { method: 'PUT' });
+      setLaunches((current) => current.map((launch) =>
+        launch._id === launchId ? { ...launch, upvotes: upvoteCount } : launch
+      ));
+    } catch (error) {
+      alert(error.message);
+    }
+  }
 
   if (loading) return <div className="panel">Loading launches...</div>;
 
   return (
     <div className="content-stack">
       <section className="panel">
-        <h2>Launch feed</h2>
+        <div className="section-heading-row">
+          <div>
+            <span className="eyebrow small">Launch feed</span>
+            <h2>Startups building momentum</h2>
+          </div>
+          {user && <Link to="/projects" className="primary-button">Create launch</Link>}
+        </div>
+
         <div className="card-grid">
           {launches.map((launch) => (
             <article className="project-card" key={launch._id}>
@@ -729,6 +782,11 @@ function LaunchPage() {
                 {(launch.tags || []).map((tag) => <span key={`${launch._id}-${tag}`} className="tag">{tag}</span>)}
               </div>
               <small>By {launch.launcher?.username || 'Founder'}</small>
+              <div className="small-links">
+                <button type="button" className="secondary-button" onClick={() => handleUpvote(launch._id)}>
+                  {user ? 'Support launch' : 'Login to support'} · {(launch.upvotes || []).length}
+                </button>
+              </div>
             </article>
           ))}
         </div>
@@ -738,30 +796,75 @@ function LaunchPage() {
 }
 
 function MentorsPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadMentors() {
-      try {
-        const data = await apiRequest('/mentors');
-        setMentors(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+  const fallbackMentors = [
+    {
+      _id: 'mentor-demo-1',
+      username: 'Aisha Rahman',
+      role: 'Product strategy',
+      company: 'Northstar Labs',
+      bio: 'Helps founders turn user insight into clear product bets and strong messaging.',
+      skills: ['Product Strategy', 'Go-to-market', 'B2B SaaS']
+    },
+    {
+      _id: 'mentor-demo-2',
+      username: 'Daniel Park',
+      role: 'AI product',
+      company: 'OpenSignal',
+      bio: 'Advises on AI workflows, MVP validation, and roadmap planning for technical founders.',
+      skills: ['AI', 'Roadmapping', 'Pricing']
     }
+  ];
 
+  async function loadMentors() {
+    try {
+      const data = await apiRequest('/mentors');
+      setMentors(data.length ? data : fallbackMentors);
+    } catch (error) {
+      console.error(error);
+      setMentors(fallbackMentors);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
     loadMentors();
   }, []);
+
+  async function handleRequestMentor(mentorId) {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      const result = await apiRequest(`/mentors/${mentorId}/request`, {
+        method: 'POST',
+        body: JSON.stringify({ message: 'I would like to connect for a quick mentorship session.' })
+      });
+      alert(result.msg || 'Mentor request sent successfully');
+    } catch (error) {
+      alert(error.message);
+    }
+  }
 
   if (loading) return <div className="panel">Loading mentors...</div>;
 
   return (
     <div className="content-stack">
       <section className="panel">
-        <h2>Mentor network</h2>
+        <div className="section-heading-row">
+          <div>
+            <span className="eyebrow small">Mentor network</span>
+            <h2>Operators who help ideas become ventures</h2>
+          </div>
+          {!user && <Link to="/auth" className="primary-button">Join mentor network</Link>}
+        </div>
         <div className="card-grid">
           {mentors.map((mentor) => (
             <article className="project-card" key={mentor._id}>
@@ -771,8 +874,331 @@ function MentorsPage() {
               <div className="tag-row">
                 {(mentor.skills || []).map((skill) => <span key={`${mentor._id}-${skill}`} className="tag">{skill}</span>)}
               </div>
+              <div className="small-links">
+                <button type="button" className="primary-button" onClick={() => handleRequestMentor(mentor._id)}>
+                  {user ? 'Request mentor' : 'Login to request'}
+                </button>
+              </div>
             </article>
           ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function GrantsPage() {
+  const [grants, setGrants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [type, setType] = useState('All');
+  const [search, setSearch] = useState('');
+
+  const fallbackGrants = [
+    {
+      _id: 'grant-demo-1',
+      title: 'Climate Innovation Fund',
+      description: 'Support for startup teams building climate-tech products with measurable impact.',
+      type: 'Grant',
+      amount: '$25,000',
+      deadline: '2026-12-20T00:00:00.000Z',
+      eligibility: ['Early-stage founders', 'Climate tech', 'Global'],
+      link: '#',
+      tags: ['Climate', 'B2B', 'Impact'],
+      featured: true
+    },
+    {
+      _id: 'grant-demo-2',
+      title: 'AI Builders Challenge',
+      description: 'Prototype grants for teams shipping AI-powered products that solve real user problems.',
+      type: 'Competition',
+      amount: '$15,000',
+      deadline: '2026-11-30T00:00:00.000Z',
+      eligibility: ['AI startups', 'MVP stage'],
+      link: '#',
+      tags: ['AI', 'Product'],
+      featured: true
+    }
+  ];
+
+  useEffect(() => {
+    async function loadGrants() {
+      try {
+        const params = new URLSearchParams();
+        if (type !== 'All') params.set('type', type);
+        if (search.trim()) params.set('search', search.trim());
+
+        const data = await apiRequest(`/grants${params.toString() ? `?${params.toString()}` : ''}`);
+        setGrants(data.length ? data : fallbackGrants.filter((grant) => {
+          const matchesType = type === 'All' || grant.type === type;
+          const matchesSearch = !search.trim() || `${grant.title} ${grant.description} ${grant.tags?.join(' ')}`.toLowerCase().includes(search.trim().toLowerCase());
+          return matchesType && matchesSearch;
+        }));
+      } catch (error) {
+        console.error(error);
+        setGrants(fallbackGrants.filter((grant) => {
+          const matchesType = type === 'All' || grant.type === type;
+          const matchesSearch = !search.trim() || `${grant.title} ${grant.description} ${grant.tags?.join(' ')}`.toLowerCase().includes(search.trim().toLowerCase());
+          return matchesType && matchesSearch;
+        }));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadGrants();
+  }, [type, search]);
+
+  if (loading) return <div className="panel">Loading grants...</div>;
+
+  return (
+    <div className="content-stack">
+      <section className="panel">
+        <div className="section-heading-row">
+          <div>
+            <span className="eyebrow small">Startup opportunities</span>
+            <h2>Grants, competitions, and accelerators</h2>
+          </div>
+        </div>
+
+        <div className="inline-two">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search grants or keywords"
+          />
+          <select value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="All">All types</option>
+            <option value="Grant">Grant</option>
+            <option value="Competition">Competition</option>
+            <option value="Scholarship">Scholarship</option>
+            <option value="Hackathon">Hackathon</option>
+            <option value="VC">VC</option>
+          </select>
+        </div>
+
+        <div className="card-grid">
+          {grants.map((grant) => (
+            <article className="project-card" key={grant._id}>
+              <h3>{grant.title}</h3>
+              <p>{grant.description}</p>
+              <div className="meta-list">
+                <span>{grant.type}</span>
+                <span>{grant.amount || 'Funding available'}</span>
+                <span>Deadline: {new Date(grant.deadline).toLocaleDateString()}</span>
+              </div>
+              <div className="tag-row">
+                {(grant.tags || []).map((tag) => <span key={`${grant._id}-${tag}`} className="tag">{tag}</span>)}
+              </div>
+              <div className="small-links">
+                <a href={grant.link || '#'} target="_blank" rel="noreferrer">Apply now</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TeamPage() {
+  const [matches, setMatches] = useState([]);
+  const [role, setRole] = useState('All');
+  const [loading, setLoading] = useState(true);
+
+  const roles = ['All', 'Developer', 'Designer', 'Product Manager', 'Marketer'];
+
+  useEffect(() => {
+    async function loadMatches() {
+      try {
+        const params = new URLSearchParams();
+        if (role !== 'All') params.set('role', role);
+        const data = await apiRequest(`/team/match${params.toString() ? `?${params.toString()}` : ''}`);
+        setMatches(data);
+      } catch (error) {
+        console.error(error);
+        setMatches([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMatches();
+  }, [role]);
+
+  async function handleConnect(user) {
+    try {
+      const result = await apiRequest('/team/connect', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: user._id,
+          message: `Hi ${user.username}, I'd love to connect and explore a team fit.`
+        })
+      });
+      alert(result.msg || 'Connection request sent successfully');
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  if (loading) return <div className="panel">Finding match candidates...</div>;
+
+  return (
+    <div className="content-stack">
+      <section className="panel">
+        <div className="section-heading-row">
+          <div>
+            <span className="eyebrow small">Team matching</span>
+            <h2>Find co-founders and collaborators</h2>
+          </div>
+          <select value={role} onChange={(e) => setRole(e.target.value)}>
+            {roles.map((option) => <option key={option} value={option}>{option}</option>)}
+          </select>
+        </div>
+
+        <div className="card-grid">
+          {matches.map((person) => (
+            <article className="project-card" key={person._id}>
+              <div className="mentor-topline">
+                <div className="avatar">{(person.username || 'U').split(' ').map((token) => token[0]).join('').slice(0, 2)}</div>
+                <div>
+                  <h3>{person.username}</h3>
+                  <span>{person.role}</span>
+                </div>
+              </div>
+              <p>{person.bio || 'Looking to help build the next big idea.'}</p>
+              <div className="tag-row">
+                {(person.skills || []).map((skill) => <span key={`${person._id}-${skill}`} className="tag">{skill}</span>)}
+              </div>
+              <div className="meta-list">
+                <span>Match score: {person.matchScore || 85}%</span>
+                <span>Shared skills: {(person.commonInterests || []).join(', ') || 'New opportunity'}</span>
+              </div>
+              <div className="small-links">
+                <button type="button" className="primary-button" onClick={() => handleConnect(person)}>Connect</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function MessagesPage() {
+  const [contacts, setContacts] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [recipientId, setRecipientId] = useState('');
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  async function loadMessages() {
+    try {
+      const [messageData, matchData] = await Promise.all([
+        apiRequest('/messages'),
+        apiRequest('/team/match')
+      ]);
+
+      setMessages(messageData);
+      setContacts(matchData);
+      if (matchData.length > 0 && !recipientId) {
+        setRecipientId(matchData[0]._id);
+      }
+    } catch (error) {
+      console.error(error);
+      setMessages([]);
+      setContacts([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadMessages();
+  }, []);
+
+  async function handleSendMessage(e) {
+    e.preventDefault();
+    if (!recipientId || !text.trim()) return;
+
+    try {
+      const result = await apiRequest('/messages', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipientId,
+          message: text.trim(),
+          type: 'team'
+        })
+      });
+
+      setMessages((current) => [result.message, ...current]);
+      setText('');
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  if (loading) return <div className="panel">Loading messages...</div>;
+
+  return (
+    <div className="content-stack">
+      <section className="panel">
+        <div className="section-heading-row">
+          <div>
+            <span className="eyebrow small">Messaging</span>
+            <h2>Stay in touch with teammates and mentors</h2>
+          </div>
+        </div>
+
+        <div className="two-column">
+          <div>
+            <h3>Contacts</h3>
+            <div className="list-plain">
+              {contacts.length ? contacts.map((person) => (
+                <button
+                  key={person._id}
+                  type="button"
+                  className={recipientId === person._id ? 'segment active' : 'segment'}
+                  onClick={() => setRecipientId(person._id)}
+                  style={{ display: 'block', marginBottom: '0.5rem', textAlign: 'left' }}
+                >
+                  {person.username} · {person.role}
+                </button>
+              )) : <p>No contacts available yet.</p>}
+            </div>
+          </div>
+
+          <div>
+            <form onSubmit={handleSendMessage} className="stack-form compact">
+              <label>
+                To
+                <select value={recipientId} onChange={(e) => setRecipientId(e.target.value)}>
+                  {contacts.map((person) => (
+                    <option key={person._id} value={person._id}>{person.username}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Message
+                <textarea value={text} onChange={(e) => setText(e.target.value)} rows="4" placeholder="Say hello and share your idea..." required />
+              </label>
+              <button type="submit" className="primary-button">Send message</button>
+            </form>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginTop: '1.5rem' }}>
+          <h3>Recent messages</h3>
+          <div className="activity-feed">
+            {messages.length ? messages.map((message) => (
+              <div key={message.id || `${message.senderId}-${message.timestamp}`} className="activity-item">
+                <div>
+                  <strong>{message.senderName || 'You'}</strong>
+                  <span>{message.message}</span>
+                </div>
+                <small>{new Date(message.timestamp).toLocaleString()}</small>
+              </div>
+            )) : <p>No messages yet.</p>}
+          </div>
         </div>
       </section>
     </div>
