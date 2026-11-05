@@ -76,7 +76,11 @@ Leveraging advanced AI models to provide real-time strategic assistance:
    MONGO_URI=your_mongodb_connection_string
    JWT_SECRET=your_jwt_secret
    GEMINI_API_KEY=your_gemini_api_key
+   FRONTEND_URL=https://innovationwebsite-wyqg.vercel.app
+   CLIENT_URL=https://innovationwebsite-wyqg.vercel.app
    ```
+
+   For production deployments, the frontend must call the public backend URL instead of `http://localhost:5000`. The backend also needs to allow the deployed Vercel origin in CORS.
 
 4. **Run the Application**
    ```bash
