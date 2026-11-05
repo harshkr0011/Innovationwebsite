@@ -128,6 +128,25 @@ function HomePage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
 
+  const startupMetrics = [
+    { label: 'Active founders', value: '24k+' },
+    { label: 'Mentor sessions', value: '8.4k' },
+    { label: 'Launches this month', value: '412' },
+    { label: 'Success match rate', value: '92%' }
+  ];
+
+  const opportunityData = [
+    { title: 'AI Workflow for SMBs', stage: 'Seed ready', trend: '+28%' },
+    { title: 'Developer hiring network', stage: 'Hiring now', trend: '+19%' },
+    { title: 'Climate fintech pilot', stage: 'Mentor matched', trend: '+34%' }
+  ];
+
+  const mentorBoard = [
+    { name: 'Aisha Rahman', role: 'Product strategy', rating: '4.9', expertise: 'B2B SaaS' },
+    { name: 'Daniel Park', role: 'AI product', rating: '4.8', expertise: 'Machine learning' },
+    { name: 'Priya Shah', role: 'Fundraising', rating: '5.0', expertise: 'Series A prep' }
+  ];
+
   async function handleSubscribe(e) {
     e.preventDefault();
     try {
@@ -145,31 +164,112 @@ function HomePage() {
   return (
     <div className="hero">
       <section className="hero-panel">
-        <div>
+        <div className="hero-copy">
           <span className="eyebrow">Startup Innovation Platform</span>
-          <h1>Build, validate, launch, and grow your next idea.</h1>
+          <h1>Turn ideas into ventures with AI, data, and mentorship.</h1>
           <p>
-            Connect with founders, mentors, and builders. Use AI to validate ideas,
-            manage projects, recruit teammates, and launch your product to the world.
+            Launch faster with a network of founders, investors, operators, and AI advisors.
+            Validate traction, build momentum, and find the right support at every stage.
           </p>
           <div className="cta-row">
             <Link to="/auth" className="primary-button">Create account</Link>
             <Link to="/projects" className="secondary-button">Explore projects</Link>
           </div>
         </div>
+
+        <div className="hero-panel-side">
+          <div className="mini-signal">
+            <span>Startup pulse</span>
+            <strong>+41.8%</strong>
+            <small>Month over month</small>
+          </div>
+          <div className="mini-chart" aria-hidden="true">
+            <span style={{ height: '35%' }} />
+            <span style={{ height: '48%' }} />
+            <span style={{ height: '62%' }} />
+            <span style={{ height: '58%' }} />
+            <span style={{ height: '72%' }} />
+            <span style={{ height: '86%' }} />
+            <span style={{ height: '100%' }} />
+          </div>
+        </div>
+      </section>
+
+      <section className="metric-strip">
+        {startupMetrics.map((metric) => (
+          <div key={metric.label} className="metric-pill">
+            <strong>{metric.value}</strong>
+            <span>{metric.label}</span>
+          </div>
+        ))}
       </section>
 
       <section className="feature-grid">
-        <FeatureCard title="AI Validation" text="Test startup viability and get roadmap suggestions backed by smart mock AI logic." />
-        <FeatureCard title="Team Matching" text="Find co-founders and collaborators based on complementary skills." />
-        <FeatureCard title="Launch Feed" text="Publish product launches and get feedback from real users." />
-        <FeatureCard title="Mentor Network" text="Request expert guidance from verified mentors in your niche." />
+        <FeatureCard title="AI Validation" text="Evaluate startup concept strength, market fit, and roadmap confidence using guided AI workflows." />
+        <FeatureCard title="Team Matching" text="Find co-founders, developers, and operators matched by skills, goals, and stage." />
+        <FeatureCard title="Launch Feed" text="Track product releases, community momentum, and founder updates in one signal-rich feed." />
+        <FeatureCard title="Mentor Network" text="Get tailored guidance from proven operators, product leaders, and ecosystem experts." />
+      </section>
+
+      <section className="split-panel">
+        <div className="panel">
+          <span className="eyebrow small">Why founders choose us</span>
+          <h2>Built for real startup execution.</h2>
+          <ul className="check-list">
+            <li>AI-assisted product planning and market validation</li>
+            <li>Mentorship pathways mapped to your startup stage</li>
+            <li>Investor-ready project visibility and launch tracking</li>
+            <li>Founder community for customer discovery and collaboration</li>
+          </ul>
+        </div>
+
+        <div className="panel">
+          <span className="eyebrow small">Market pulse</span>
+          <h2>High-signal opportunities</h2>
+          <div className="opportunity-list">
+            {opportunityData.map((item) => (
+              <div key={item.title} className="opportunity-item">
+                <div>
+                  <strong>{item.title}</strong>
+                  <span>{item.stage}</span>
+                </div>
+                <em>{item.trend}</em>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel mentor-panel">
+        <div className="section-heading-row">
+          <div>
+            <span className="eyebrow small">Mentor board</span>
+            <h2>Operators who help ideas become ventures</h2>
+          </div>
+          <Link to="/mentors" className="secondary-button">View network</Link>
+        </div>
+
+        <div className="mentor-grid">
+          {mentorBoard.map((mentor) => (
+            <article key={mentor.name} className="mentor-card">
+              <div className="mentor-topline">
+                <div className="avatar">{mentor.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}</div>
+                <div>
+                  <h3>{mentor.name}</h3>
+                  <span>{mentor.role}</span>
+                </div>
+              </div>
+              <p>{mentor.expertise}</p>
+              <strong>★ {mentor.rating}</strong>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="newsletter">
         <div>
           <h2>Stay in the loop</h2>
-          <p>Get founder updates and funding opportunities in your inbox.</p>
+          <p>Get founder updates, launch alerts, and funding opportunities in your inbox.</p>
         </div>
         <form onSubmit={handleSubscribe} className="inline-form">
           <input
@@ -278,6 +378,19 @@ function DashboardPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const pipeline = [
+    { label: 'Customer discovery', value: 78, tone: 'cyan' },
+    { label: 'Prototype validation', value: 64, tone: 'blue' },
+    { label: 'Mentor feedback loop', value: 88, tone: 'purple' },
+    { label: 'Launch readiness', value: 71, tone: 'green' }
+  ];
+
+  const activityFeed = [
+    { title: 'New mentor session booked', detail: 'Product strategy review with Aisha Rahman', time: '2h ago' },
+    { title: 'Community traction increased', detail: 'Engagement up 18% from last week', time: '6h ago' },
+    { title: 'AI roadmap generated', detail: '3 growth loops recommended for your product', time: '1d ago' }
+  ];
+
   useEffect(() => {
     async function loadDashboard() {
       try {
@@ -305,6 +418,17 @@ function DashboardPage() {
 
   return (
     <div className="content-stack">
+      <section className="dashboard-top panel">
+        <div>
+          <span className="eyebrow small">Founder dashboard</span>
+          <h2>Welcome back, {profile?.username || 'builder'}.</h2>
+        </div>
+        <div className="dashboard-badge">
+          <span className="dot" />
+          Startup health: strong
+        </div>
+      </section>
+
       <section className="stats-grid">
         <StatCard label="Projects" value={stats?.projects ?? 0} />
         <StatCard label="Contributions" value={stats?.contributions ?? 0} />
@@ -314,8 +438,8 @@ function DashboardPage() {
 
       <section className="two-column">
         <div className="panel">
-          <h2>Welcome back</h2>
-          <p className="muted-text">{profile?.bio || 'Complete your profile to showcase your work.'}</p>
+          <h2>Startup snapshot</h2>
+          <p className="muted-text">{profile?.bio || 'Complete your profile to showcase your work and attract the right opportunity.'}</p>
           <div className="meta-list">
             <span>Role: {profile?.role || 'Student Innovator'}</span>
             <span>Location: {profile?.location || 'Not specified'}</span>
@@ -337,6 +461,40 @@ function DashboardPage() {
           ) : (
             <p>No projects yet.</p>
           )}
+        </div>
+      </section>
+
+      <section className="two-column">
+        <div className="panel">
+          <h2>Execution pipeline</h2>
+          <div className="pipeline-list">
+            {pipeline.map((item) => (
+              <div key={item.label} className="pipeline-row">
+                <div className="pipeline-label">
+                  <span>{item.label}</span>
+                  <strong>{item.value}%</strong>
+                </div>
+                <div className="pipeline-track">
+                  <span className={`pipeline-fill ${item.tone}`} style={{ width: `${item.value}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel">
+          <h2>Recent activity</h2>
+          <div className="activity-feed">
+            {activityFeed.map((item) => (
+              <div key={item.title} className="activity-item">
+                <div>
+                  <strong>{item.title}</strong>
+                  <span>{item.detail}</span>
+                </div>
+                <small>{item.time}</small>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>
